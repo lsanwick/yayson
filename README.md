@@ -2,6 +2,9 @@
 
 A library for serializing and reading [JSON API](http://jsonapi.org) data in JavaScript. As of 2.0.0 YAYSON aims to support JSON API version 1.
 
+[![NPM](https://nodei.co/npm/yayson.png?downloads=true)](https://nodei.co/npm/yayson/)
+
+
 ## Installing
 
 Install yayson by running:
@@ -12,7 +15,7 @@ $ npm install yayson --save
 
 ## Presenting data
 
-A basic `Presenter` can look like this:
+A basic `Presenter` can look like this in Coffeescript:
 
 ```coffee
   {Presenter} = require('yayson')(adapter: 'default')
@@ -26,6 +29,25 @@ A basic `Presenter` can look like this:
 
   ItemsPresenter.render(item)
 ```
+
+Or in plain JavaScript:
+
+```javascript
+  const Presenter = require('yayson')({
+    adapter: 'default'
+  }).Presenter;
+
+  class ItemsPresenter extends Presenter {};
+  ItemsPresenter.prototype.type = 'items';
+
+  var item = {
+    id: 5,
+    name: 'First'
+  };
+
+  ItemsPresenter.render(item);
+```
+
 
 This would produce:
 
@@ -70,9 +92,7 @@ In JavaScript this would be done as:
 
 var Presenter = require('yayson')().Presenter;
 
-var ItemsPresenter = function () { Presenter.call(this); }
-ItemsPresenter.prototype = new Presenter();
-
+class ItemsPresenter extends Presenter {};
 ItemsPresenter.prototype.type = 'items'
 
 ItemsPresenter.prototype.attributes = function() {
@@ -96,9 +116,28 @@ ItemsPresenter.render(item)
 By default it is set up to handle standard JS objects. You can also make
 it handle Sequelize.js models like this:
 
-```coffee
-{Presenter} = require('yayson')(adapter: 'sequelize')
+```javascript
+{Presenter} = require('yayson')({adapter: 'sequelize'})
 
+```
+
+You can also define your own adapter globally:
+
+```javascript
+{Presenter} = require('yayson')(adapter: {
+  id: function(model){ return 'omg' + model.id},
+  get: function(model, key){ return model[key] }
+})
+
+```
+
+Or at Presenter level:
+
+```javascript
+ItemPresenter.adapter = {
+  id: function(model){ return 'omg' + model.id},
+  get: function(model, key){ return model[key] }
+}
 ```
 
 Take a look at the SequelizeAdapter if you want to extend YAYSON to your ORM. Pull requests are welcome. :)

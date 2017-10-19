@@ -1,10 +1,10 @@
-@window ||= {}
 
-Q = @window.Q
-_ = @window._
+if window?
+  Q = window.Q
+  _ = window._
 
 Q ||= (try require? 'q')
-_ ||= (try require? 'lodash/dist/lodash.underscore')
+_ ||= (try require? 'lodash')
 _ ||= (try require? 'underscore')
 
 utils = require('./yayson/utils')(_, Q)
@@ -14,7 +14,8 @@ adapters = require('./yayson/adapters')
 presenterFactory = require('./yayson/presenter')
 
 lookupAdapter = (nameOrAdapter) ->
-  adapters[nameOrAdapter] || Adapter
+  return Adapter if nameOrAdapter == 'default'
+  adapters[nameOrAdapter] || nameOrAdapter || Adapter
 
 presenter = (options = {}) ->
   adapter = lookupAdapter options.adapter

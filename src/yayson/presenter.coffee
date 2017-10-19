@@ -60,6 +60,8 @@ module.exports = (utils, adapter) ->
             rel.data = buildData(d)
           if links[key]?
             rel.links = buildLinks links[key]
+          else unless d?
+            rel.data = null
           rel
         relationships ||= {}
         relationships[key] ||= {}
@@ -92,6 +94,7 @@ module.exports = (utils, adapter) ->
           id: @id instance
           type: @type
           attributes: @attributes instance
+        delete model.id if model.id == undefined
         relationships = @buildRelationships instance
         model.relationships = relationships if relationships?
         links = @buildSelfLink instance

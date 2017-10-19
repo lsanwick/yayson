@@ -1,6 +1,9 @@
+sinon = require('sinon')
 expect = require('chai').expect
+assert = require('chai').assert
 
-{Presenter} = require('../../src/yayson.coffee')()
+presenterFactory = require('../../src/yayson.coffee')
+{Presenter} = presenterFactory()
 
 describe 'Presenter', ->
   it 'handles null', ->
@@ -33,6 +36,15 @@ describe 'Presenter', ->
         attributes:
           foo: 'baz'
       }]
+
+  it 'should not include id if not specified', ->
+    obj = {foo: 'bar'}
+    json = Presenter.toJSON(obj)
+    expect(json).to.deep.equal
+      data:
+        type: 'objects'
+        attributes:
+          foo: 'bar'
 
   it 'should not dup object', ->
     obj = [{id: 1}, {id: 1}]
@@ -282,6 +294,18 @@ describe 'Presenter', ->
     expect(json.data.relationships.car.links.related).to.eq '/cars/3/car'
     expect(json.data.relationships.car.data).to.eq undefined
 
+  it 'should render data: null for unspecified relationships', ->
+    class CarPresenter extends Presenter
+      type: 'cars'
+
+      relationships: ->
+        car: CarPresenter
+
+    json = CarPresenter.render(id: 3)
+    expect(json.data.relationships).to.deep.equal
+      car:
+        data: null
+
   it 'should serialize in pure JS', ->
     `
     var EventPresenter = function () { Presenter.call(this); }
@@ -327,3 +351,14 @@ describe 'Presenter', ->
         id: '5'
         attributes:
           foo: 'bar'
+
+  it 'can use custom adapters', ->
+    obj = {id: 5, foo: 'bar'}
+    adapter = {
+      id: sinon.spy -> 1
+      get: sinon.spy -> 'bar'
+    }
+    PresenterWithMockAdapter = presenterFactory({adapter}).Presenter
+    json = PresenterWithMockAdapter.toJSON(obj)
+    expect(adapter.id).to.have.been.calledOnce
+    expect(adapter.get).to.have.been.calledOnce
