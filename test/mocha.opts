@@ -1,4 +1,3 @@
---compilers coffee:coffee-script/register
 --timeout 5000
 --require test/common
-test/yayson/**/*.coffee
+test/yayson/**/*.js

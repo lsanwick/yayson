@@ -6,12 +6,12 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-const Adapter = require('../adapter');
+import Adapter from '../adapter'
 
-class SequelizeAdapter extends Adapter {
+export default class SequelizeAdapter extends Adapter {
   static get(model, key) {
-    if (model != null) { return model.get(key); }
+    if (model != null) {
+      return model.get(key)
+    }
   }
 }
-
-module.exports = SequelizeAdapter;

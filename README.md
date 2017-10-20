@@ -5,6 +5,20 @@ A library for serializing and reading [JSON API](http://jsonapi.org) data in Jav
 [![NPM](https://nodei.co/npm/yayson.png?downloads=true)](https://nodei.co/npm/yayson/)
 
 
+## MAJOR FORK
+
+
+* Convert all coffeescript to ES6
+* Move to Webpack for the build process from Gulp
+* Remove optional dependencies on lodash/underscore/Q entirely, just use the "fallback" methods
+* Zero other external dependencies
+
+### TODO
+
+* Migrate away from prototypical inheritance on Presenter classes
+* Clean up verbose code from decaffeinate
+
+
 ## Installing
 
 Install yayson by running:
