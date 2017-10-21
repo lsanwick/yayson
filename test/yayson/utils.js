@@ -34,14 +34,6 @@ const testUtils = function(utils) {
     return expect(anyEvens).to.be.true
   })
 
-  it('should clone an object', function() {
-    const obj = { a: 1 }
-    const obj2 = utils.clone(obj)
-
-    expect(obj).not.to.equal(obj2)
-    return expect(obj.a).to.equal(obj2.a)
-  })
-
   return it('should parse object values', function() {
     const obj = { a: 1, b: 2 }
     const values = utils.values(obj)

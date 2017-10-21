@@ -394,7 +394,7 @@ describe('Presenter', function() {
     expect(json.data.links.self).to.eq('/cars/3')
     expect(json.data.relationships.car.links.self).to.eq('/cars/3/linkage/car')
     expect(json.data.relationships.car.links.related).to.eq('/cars/3/car')
-    return expect(json.data.relationships.car.data).to.eq(undefined)
+    expect(json.data.relationships.car.data).to.eq(undefined)
   })
 
   it('should render data: null for unspecified relationships', function() {

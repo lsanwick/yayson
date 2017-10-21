@@ -21,10 +21,12 @@ export default class Store {
   }
 
   toModel(rec, type, models) {
-    const model = utils.clone(rec.attributes) || {}
+    let model = {
+      ...rec.attributes,
+      id: rec.id,
+      type: rec.type,
+    }
 
-    model.id = rec.id
-    model.type = rec.type
     if (!models[type]) {
       models[type] = {}
     }
@@ -33,38 +35,39 @@ export default class Store {
     }
 
     if (model.hasOwnProperty('meta')) {
-      model.attributes = { meta: model.meta }
-      delete model.meta
+      const { meta, ...rest } = model
+      model = {
+        ...rest,
+        attributes: {
+          meta,
+        },
+      }
     }
 
-    if (rec.meta != null) {
+    if (rec.meta) {
       model.meta = rec.meta
     }
 
-    if (rec.links != null) {
+    if (rec.links) {
       model.links = rec.links
     }
 
-    if (rec.relationships != null) {
+    if (rec.relationships) {
       for (let key in rec.relationships) {
-        const rel = rec.relationships[key]
-        const { data } = rel
-        const { links } = rel
-        const { meta } = rel
+        const { data, links, meta } = rec.relationships[key]
 
         model[key] = null
-        if (data == null && links == null) {
+        if (!data && !links) {
           continue
         }
-        const resolve = ({ type, id }) => {
-          return this.find(type, id, models)
-        }
-        model[key] = data instanceof Array ? data.map(resolve) : data != null ? resolve(data) : {}
+        const resolve = ({ type, id }) => this.find(type, id, models)
+
+        model[key] = data instanceof Array ? data.map(resolve) : data ? resolve(data) : {}
 
         // Model of the relation
         const currentModel = model[key]
 
-        if (currentModel != null) {
+        if (currentModel) {
           // retain the links and meta from the relationship entry
           // use as underscore property name because the currentModel may also have a link and meta reference
           currentModel._links = links || {}
@@ -84,56 +87,45 @@ export default class Store {
     return utils.filter(this.records, r => r.type === type)
   }
 
-  find(type, id, models) {
-    if (models == null) {
-      models = {}
-    }
+  find(type, id, models = {}) {
     const rec = this.findRecord(type, id)
-    if (rec == null) {
+    if (!rec) {
       return null
     }
-    if (!models[type]) {
-      models[type] = {}
-    }
+    models[type] = models[type] || {}
     return models[type][id] || this.toModel(rec, type, models)
   }
 
-  findAll(type, models) {
-    if (models == null) {
-      models = {}
-    }
+  findAll(type, models = {}) {
     const recs = this.findRecords(type)
-    if (recs == null) {
+    if (!recs) {
       return []
     }
     recs.forEach(rec => {
-      if (!models[type]) {
-        models[type] = {}
-      }
+      models[type] = models[type] || {}
       return this.toModel(rec, type, models)
     })
     return utils.values(models[type])
   }
 
   remove(type, id) {
-    const remove = record => {
+    const removeRecord = record => {
       const index = this.records.indexOf(record)
-      if (!(index < 0)) {
+      if (index > -1) {
         return this.records.splice(index, 1)
       }
     }
 
-    if (id != null) {
-      return remove(this.findRecord(type, id))
-    } else {
-      const records = this.findRecords(type)
-      return records.map(remove)
+    if (id) {
+      return removeRecord(this.findRecord(type, id))
     }
+
+    return this.findRecords(type).map(removeRecord)
   }
 
   sync(body) {
     const sync = data => {
-      if (data == null) {
+      if (!data) {
         return null
       }
 
@@ -155,7 +147,7 @@ export default class Store {
     sync(body.included)
     const recs = sync(body.data)
 
-    if (recs == null) {
+    if (!recs) {
       return null
     }
 

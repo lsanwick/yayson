@@ -40,12 +40,11 @@ export default function(adapter) {
     relationships() {}
 
     attributes(instance) {
-      if (instance == null) {
+      if (!instance) {
         return null
       }
-      const attributes = utils.clone(this.adapter.get(instance))
-      delete attributes['id']
-      delete attributes['type']
+
+      const { id, type, ...attributes } = this.adapter.get(instance)
 
       const relationships = this.relationships()
       for (let key in relationships) {
@@ -56,29 +55,23 @@ export default function(adapter) {
 
     includeRelationships(scope, instance) {
       const relationships = this.relationships()
-      return (() => {
-        const result = []
-        for (var key in relationships) {
-          const factory =
-            relationships[key] ||
-            (() => {
-              throw new Error(`Presenter for ${key} in ${this.constructor.type} is not defined`)
-            })()
-          const presenter = new factory(scope)
-
-          const data = this.adapter.get(instance, key)
-          if (data != null) {
-            result.push(presenter.toJSON(data, { include: true }))
-          } else {
-            result.push(undefined)
-          }
+      const result = []
+      for (var key in relationships) {
+        const factory = relationships[key]
+        if (!factory) {
+          throw new Error(`Presenter for ${key} in ${this.constructor.type} is not defined`)
         }
-        return result
-      })()
+        const presenter = new factory(scope)
+
+        const data = this.adapter.get(instance, key)
+        if (data) {
+          result.push(presenter.toJSON(data, { include: true }))
+        }
+      }
     }
 
     buildRelationships(instance) {
-      if (instance == null) {
+      if (!instance) {
         return null
       }
       const rels = this.relationships()
@@ -87,20 +80,18 @@ export default function(adapter) {
       for (var key in rels) {
         let data = this.adapter.get(instance, key)
         var presenter = rels[key]
-        var buildData = d => {
-          return (data = {
-            id: this.adapter.id(d),
-            type: presenter.type,
-          })
-        }
+        const buildData = d => ({
+          id: this.adapter.id(d),
+          type: presenter.type,
+        })
         const build = d => {
           const rel = {}
-          if (d != null) {
+          if (d) {
             rel.data = buildData(d)
           }
-          if (links[key] != null) {
+          if (links[key]) {
             rel.links = buildLinks(links[key])
-          } else if (d == null) {
+          } else if (!d) {
             rel.data = null
           }
           return rel
@@ -108,12 +99,11 @@ export default function(adapter) {
         if (!relationships) {
           relationships = {}
         }
-        if (!relationships[key]) {
-          relationships[key] = {}
-        }
+        relationships = relationships || {}
+        relationships[key] = relationships[key] || {}
         if (data instanceof Array) {
           relationships[key].data = data.map(buildData)
-          if (links[key] != null) {
+          if (links[key]) {
             relationships[key].links = buildLinks(links[key])
           }
         } else {
@@ -127,53 +117,44 @@ export default function(adapter) {
       return buildLinks(this.selfLinks(instance))
     }
 
-    toJSON(instanceOrCollection, options) {
-      if (options == null) {
-        options = {}
-      }
-      if (options.meta != null) {
+    toJSON(instanceOrCollection, options = {}) {
+      if (options.meta) {
         this.scope.meta = options.meta
       }
       if (!this.scope.data) {
         this.scope.data = null
       }
 
-      if (instanceOrCollection == null) {
+      if (!instanceOrCollection) {
         return this.scope
       }
 
       if (instanceOrCollection instanceof Array) {
         const collection = instanceOrCollection
-        if (!this.scope.data) {
-          this.scope.data = []
-        }
-        collection.forEach(instance => {
-          return this.toJSON(instance, options)
-        })
+        this.scope.data = this.scope.data || []
+        collection.forEach(instance => this.toJSON(instance, options))
       } else {
         const instance = instanceOrCollection
         let added = true
         const model = {
-          id: this.id(instance),
           type: this.constructor.type,
           attributes: this.attributes(instance),
         }
-        if (model.id === undefined) {
-          delete model.id
-        }
+        const id = this.id(instance)
         const relationships = this.buildRelationships(instance)
-        if (relationships != null) {
+        const links = this.buildSelfLink(instance)
+        if (id) {
+          model.id = id
+        }
+        if (relationships) {
           model.relationships = relationships
         }
-        const links = this.buildSelfLink(instance)
-        if (links != null) {
+        if (links) {
           model.links = links
         }
 
         if (options.include) {
-          if (!this.scope.included) {
-            this.scope.included = []
-          }
+          this.scope.included = this.scope.included || []
           if (
             !utils.any(
               this.scope.included.concat(this.scope.data),
@@ -184,7 +165,7 @@ export default function(adapter) {
           } else {
             added = false
           }
-        } else if (this.scope.data != null) {
+        } else if (this.scope.data) {
           if (
             !(this.scope.data instanceof Array) ||
             !utils.any(this.scope.data, i => i.id === model.id)
@@ -205,11 +186,9 @@ export default function(adapter) {
     }
 
     render(instanceOrCollection, options) {
-      if (utils.isPromise(instanceOrCollection)) {
-        return instanceOrCollection.then(data => this.toJSON(data, options))
-      } else {
-        return this.toJSON(instanceOrCollection, options)
-      }
+      return utils.isPromise(instanceOrCollection)
+        ? instanceOrCollection.then(data => this.toJSON(data, options))
+        : this.toJSON(instanceOrCollection, options)
     }
   }
 

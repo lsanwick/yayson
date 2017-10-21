@@ -34,12 +34,6 @@ export default {
     }
     return Object.values(obj)
   },
-  clone: obj => {
-    if (obj == null) {
-      obj = {}
-    }
-    return { ...obj }
-  },
   any: (arr, callback) => find(arr, callback) != null,
   // stolen from https://github.com/kriskowal/q
   isPromise: obj =>
